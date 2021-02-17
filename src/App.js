@@ -1,25 +1,103 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from "react";
+import {
+  Route,
+  BrowserRouter as Router,
+  Switch,
+  Redirect
+} from "react-router-dom";
+import Home from "./pages/Home.js";
+import Chat from "./pages/Chat.js";
+import Signup from "./pages/Signup.js";
+import Login from "./pages/Login.js";
+import { auth } from "./services/firebase";
+import './styles.css';
 
-function App() {
+function PrivateRoute({ component: Component, authenticated, ...rest }) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Route
+      {...rest}
+      render={props =>
+        authenticated === true ? (
+          <Component {...props} />
+        ) : (
+            <Redirect
+              to={{ pathname: "/login", state: { from: props.location } }}
+            />
+          )
+      }
+    />
   );
+}
+
+function PublicRoute({ component: Component, authenticated, ...rest }) {
+  return (
+    <Route
+      {...rest}
+      render={props =>
+        authenticated === false ? (
+          <Component {...props} />
+        ) : (
+            <Redirect to="/chat" />
+          )
+      }
+    />
+  );
+}
+
+class App extends Component {
+  constructor() {
+    super();
+    this.state = {
+      authenticated: false,
+      loading: true
+    };
+  }
+
+  componentDidMount() {
+    auth().onAuthStateChanged(user => {
+      if (user) {
+        this.setState({
+          authenticated: true,
+          loading: false
+        });
+
+      } else {
+        this.setState({
+          authenticated: false,
+          loading: false
+        });
+      }
+    });
+  }
+
+  render() {
+    return this.state.loading === true ? (
+      <div className="spinner-border text-success" role="status">
+        <span className="sr-only">Loading...</span>
+      </div>
+    ) : (
+        <Router>
+          <Switch>
+            <Route exact path="/" component={Home} />
+            <PrivateRoute
+              path="/chat"
+              authenticated={this.state.authenticated}
+              component={Chat}
+            />
+            <PublicRoute
+              path="/signup"
+              authenticated={this.state.authenticated}
+              component={Signup}
+            />
+            <PublicRoute
+              path="/login"
+              authenticated={this.state.authenticated}
+              component={Login}
+            />
+          </Switch>
+        </Router>
+      );
+  }
 }
 
 export default App;

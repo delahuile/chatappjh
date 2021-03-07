@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { signup, signInWithGoogle, signInWithGitHub } from "../helpers/auth";
+import { auth } from "../services/firebase";
+import { db } from "../services/firebase";
 
 export default class SignUp extends Component {
 
@@ -10,11 +12,13 @@ export default class SignUp extends Component {
       error: null,
       email: '',
       password: '',
+      username: ''
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.googleSignIn = this.googleSignIn.bind(this);
     this.githubSignIn = this.githubSignIn.bind(this);
+    
   }
 
   handleChange(event) {
@@ -27,7 +31,17 @@ export default class SignUp extends Component {
     event.preventDefault();
     this.setState({ error: '' });
     try {
-      await signup(this.state.email, this.state.password);
+      await signup(this.state.email, this.state.password)
+      .then( () => {
+        console.log("uid is " + auth().currentUser.uid)
+        console.log("displayname is "+ auth().currentUser.displayName)
+        db.ref("userID_Names").push({
+          uid: auth().currentUser.uid,
+          name: this.state.username
+        }
+        )
+      })
+
     } catch (error) {
       this.setState({ error: error.message });
     }
@@ -59,6 +73,9 @@ export default class SignUp extends Component {
           <Link className="title ml-2" to="/">Chatty</Link>
           </h1>
           <p className="lead">Fill in the form below to create an account.</p>
+          <div className="form-group">
+            <input className="form-control" placeholder="Username" name="username" type="username" onChange={this.handleChange} value={this.state.username}></input>
+          </div>
           <div className="form-group">
             <input className="form-control" placeholder="Email" name="email" type="email" onChange={this.handleChange} value={this.state.email}></input>
           </div>

@@ -48,12 +48,18 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      authenticated: false,
-      loading: true
+      authenticated: true,
+      loading: true,
+      firstrun: true
     };
-  }
+
+    console.log("At startup currentusename is " + auth().currentUser);
+    console.log("At startup authenticated is " + this.state.authenticated);
+    
+    }
 
   componentDidMount() {
+    
     auth().onAuthStateChanged(user => {
       if (user) {
         this.setState({

@@ -33,7 +33,7 @@ function PublicRoute({ component: Component, authenticated, ...rest }) {
   return (
     <Route
       {...rest}
-      render={props =>
+      render={props => 
         authenticated === false ? (
           <Component {...props} />
         ) : (
@@ -43,6 +43,7 @@ function PublicRoute({ component: Component, authenticated, ...rest }) {
     />
   );
 }
+
 
 class App extends Component {
   constructor() {
@@ -62,12 +63,14 @@ class App extends Component {
     
     auth().onAuthStateChanged(user => {
       if (user) {
+        console.log("authentication successfull");
         this.setState({
           authenticated: true,
           loading: false
         });
 
       } else {
+        console.log("no user is signed in")
         this.setState({
           authenticated: false,
           loading: false
@@ -84,7 +87,6 @@ class App extends Component {
     ) : (
         <Router>
           <Switch>
-            <Route exact path="/" component={Home} />
             <PrivateRoute
               path="/chat"
               authenticated={this.state.authenticated}
@@ -100,6 +102,12 @@ class App extends Component {
               authenticated={this.state.authenticated}
               component={Login}
             />
+            <PublicRoute
+              path="/"
+              authenticated={this.state.authenticated}
+              component={Home}
+            />
+            <Route exact path="/" component={Home} />
           </Switch>
         </Router>
       );

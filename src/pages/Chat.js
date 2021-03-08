@@ -18,14 +18,16 @@ export default class Chat extends Component {
       loadingChats: false,
       isMounted: false,
       snapName: "",
-      isEmailLogin: false
+      isEmailLogin: false,
+      snapKey: "",
+      userAlreadyInuserID_NamesFlag: false
     };
     this.handleContentChange = this.handleContentChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleNameChange = this.handleNameChange.bind(this);
     this.processNameChange = this.processNameChange.bind(this);
     this.myRef = React.createRef();
-    this.checkUserState = this.checkUserState.bind(this);
+    this.setCurrentUsername = this.setCurrentUsername.bind(this);
     this.checkOrCreateUsername = this.checkOrCreateUsername.bind(this);
   }
 
@@ -51,13 +53,12 @@ export default class Chat extends Component {
         chatArea.scrollBy(0, chatArea.scrollHeight);
         this.setState({ loadingChats: false }); 
 
-        
-        this.checkOrCreateUsername();
-        
         console.log(chats);
         console.log(user.displayName);
 
       });
+
+      this.checkOrCreateUsername();
 
     } catch (error) {
       this.setState({ readError: error.message, loadingChats: false });
@@ -73,26 +74,34 @@ export default class Chat extends Component {
   }
 
   //Checks if user has already been given name in signup or create a reandom username if signup is via google or github
-  checkOrCreateUsername(){
+  async checkOrCreateUsername(){
 
     // signup with email
     if (auth().currentUser.displayName === null) {
+
       db.ref("userID_Names").on("value", snapshot => {
       snapshot.forEach((snap) => {
         if (snap.val().uid === auth().currentUser.uid){
           this.setState({isEmailLogin: true});
           console.log("snap uid is " + snap.val().uid);
-          console.log("username in snap is " + snap.val().name)
+          console.log("username in snap is " + snap.val().name);
           this.setState({snapName: snap.val().name});
-          auth().currentUser.updateProfile({ displayName: snap.val().name}).then(() => this.checkUserState(snap.val().name));
-          console.log("username after snap is now " + auth().currentUser.displayName)
+          console.log("isEmailLogin first is " + this.state.isEmailLogin);
+          auth().currentUser.updateProfile({ displayName: snap.val().name}).then(() => this.setCurrentUsername(snap.val().name));
+
+          //snapkey is key to the usernameUid data
+          this.setState({snapKey: snap.key});
+
+          console.log("snap key is " + this.state.snapKey);
+
         }
        } 
-      )
-    })
-
-    //sign-up with google or github
+      );
+      //sign-up with google or github
     if(!this.state.isEmailLogin) {
+
+      console.log("isEmailLogin third is " + this.state.isEmailLogin);
+
       let randomUserName = this.createRandomUsername();
 
       db.ref("userID_Names").push({
@@ -100,18 +109,69 @@ export default class Chat extends Component {
         name: randomUserName
       }
       )
-      auth().currentUser.updateProfile({ displayName: randomUserName}).then(() => this.checkUserState(randomUserName))
+      auth().currentUser.updateProfile({ displayName: randomUserName}).then(() => this.setCurrentUsername(randomUserName));
     }
+    })
+
+    } else {
+      // if displayName is not null, currentUser already has username that is pushed into userID_Names
+      let userAlreadyInuserID_Names = false;
+      db.ref("userID_Names").once("value", snapshot => {
+        snapshot.forEach((snap) => {
+          console.log("snap.uid is " + snap.val().uid);
+          console.log("auth() uid is " + auth().currentUser.uid);
+          console.log("snap.val().uid isequal auth().currentUser.uid " + (snap.val().uid === auth().currentUser.uid));
+          if (snap.val().uid === auth().currentUser.uid){
+            console.log("snap match found")
+            userAlreadyInuserID_Names = true;
+            //snapkey is key to the usernameUid data
+            this.setState({snapKey: snap.key})
+          }
+         } 
+        );
+        this.setState({userAlreadyInuserID_NamesFlag: true});
+      }).then( () => {
+        if(!userAlreadyInuserID_Names){
+          console.log("!userAlreadyInuserID_Names " + !userAlreadyInuserID_Names);
+  
+          db.ref("userID_Names").push({
+            uid: auth().currentUser.uid,
+            name: auth().currentUser.displayName
+          });
+        }
+      }
+      ).then( () => {
+        //after possibly pushing userid_uid let's set snapkey if not already set
+        db.ref("userID_Names").once("value", snapshot => {
+          snapshot.forEach((snap) => {
+            console.log("snap.uid is " + snap.val().uid);
+            console.log("auth() uid is " + auth().currentUser.uid);
+            console.log("snap.val().uid isequal auth().currentUser.uid " + (snap.val().uid === auth().currentUser.uid));
+            if (snap.val().uid === auth().currentUser.uid){
+              console.log("snap match found")
+              userAlreadyInuserID_Names = true;
+              //snapkey is key to the usernameUid data
+              this.setState({snapKey: snap.key});
+            }
+           } 
+          );
+          this.setState({userAlreadyInuserID_NamesFlag: true});
+        })
+    }  
+
+      );
     }
   }
 
   //Creates random username for google and github users
   createRandomUsername () {
     let randomName = "user" + ((Math.random())*1000000000).toFixed(0);
+    console.log("created random username");
     return randomName;
   }
 
-  async checkUserState(name){ 
+  async setCurrentUsername(name){ 
+    console.log("isEmailLogin after is " + this.state.isEmailLogin)
     this.setState({currentUserName: name});
     console.log("auth().currentuser.displayname is " + auth().currentUser.displayName)
   }
@@ -156,10 +216,13 @@ export default class Chat extends Component {
   async processNameChange(event) {
     event.preventDefault();
     const previusName = auth().currentUser.displayName;
+
+    //updating auth() profile displayName
     auth().currentUser.updateProfile({ displayName: this.state.currentUserName}).then(
       () => {
         console.log("response is ");
         try {
+          //pushing up a message into the chat that the username has been changed
           db.ref("chats").push({
             content: "User " + previusName + " with email "  + this.state.user.email + " changed name to " + this.state.currentUserName,
             timestamp: Date.now(),
@@ -169,6 +232,8 @@ export default class Chat extends Component {
             this.setState({
               currentUserName: auth().currentUser.displayName
             });
+            //updating also username in realtime database
+            db.ref('userID_Names').child(this.state.snapKey).update({name: auth().currentUser.displayName})
           })
         } catch (error) {
           this.setState({ writeError: error.message });
@@ -176,6 +241,8 @@ export default class Chat extends Component {
       }
     );
   }
+
+
 
   formatTime(timestamp) {
     const d = new Date(timestamp);

@@ -49,6 +49,7 @@ export default class Login extends Component {
   }
 
   render() {
+    console.log("web page is in state home")
     return (
       <div className="container">
         <form

@@ -53,11 +53,7 @@ class App extends Component {
       loading: true,
       firstrun: true
     };
-
-    console.log("At startup currentusename is " + auth().currentUser);
-    console.log("At startup authenticated is " + this.state.authenticated);
-    
-    }
+  }
 
   componentDidMount() {
     

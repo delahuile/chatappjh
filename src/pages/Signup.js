@@ -33,8 +33,6 @@ export default class SignUp extends Component {
     try {
       await signup(this.state.email, this.state.password)
       .then( () => {
-        console.log("uid is " + auth().currentUser.uid)
-        console.log("displayname is "+ auth().currentUser.displayName)
         db.ref("userID_Names").push({
           uid: auth().currentUser.uid,
           name: this.state.username
@@ -69,8 +67,8 @@ export default class SignUp extends Component {
       <div className="container">
         <form className="mt-5 py-5 px-5" onSubmit={this.handleSubmit}>
           <h1>
-            Sign Up to
-          <Link className="title ml-2" to="/">Chatty</Link>
+            Sign Up to 
+          <Link className="title ml-2" to="/">ChatAppJH</Link>
           </h1>
           <p className="lead">Fill in the form below to create an account.</p>
           <div className="form-group">

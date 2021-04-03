@@ -1,8 +1,11 @@
 @import url('https://fonts.googleapis.com/css?family=Poppins&display=swap');
 
 body {
-  font-family: 'Poppins', sans-serif;
-  background-color: #fcfcfc;
+  font-family: 'Times New Roman', Times, serif;
+  background-color: #ecebea;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .chat-area, .home {
@@ -10,17 +13,30 @@ body {
 }
 
 .chat-area {
+  background-color: #ece3d9;
   padding: 20px;
   height: 400px;
+  width: 800px;
   overflow-y: scroll;
 }
 
 .chat-area .chat-bubble {
-  background-color: #bbdefb;
+  background-color: #bbecfb;
   padding: 20px;
-  border-radius: 4px;
+  border-radius: 10px;
   max-width: 300px;
   word-wrap: break-word;
+}
+
+.chat-area .namechange-bubble {
+
+  font-size: medium;
+  font-family: 'Times New Roman', Times, serif;
+  color: #7c4d26;
+  font-style: italic;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .chat-bubble .chat-time {
@@ -31,11 +47,14 @@ body {
 
 .chat-area .chat-bubble.current-user {
   margin-left: auto;
-  background-color: #a5d6a7;
+  background-color: #a5d6b8;
 }
 
 .form-control {
   width: 60%;
+  border-radius: 3px;
+  border-width: 2px;
+  border-color: rgb(102, 78, 59);
 }
 
 .form-control:focus {
@@ -44,10 +63,11 @@ body {
 
 .btn {
   margin-top: 10px;
+  border-radius: 3px;
 }
 
 .btn-submit {
-  background-color: #2e7d32;
+  background-color: #4778d1;
   color: white;
 }
 

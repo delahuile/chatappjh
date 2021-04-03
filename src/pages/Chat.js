@@ -1,4 +1,4 @@
-import React, { Component} from "react";
+import React, { Component } from "react";
 import Header from "../components/Header";
 import { auth } from "../services/firebase";
 import { db } from "../services/firebase";
@@ -33,29 +33,31 @@ export default class Chat extends Component {
 
   async componentDidMount() {
 
-    this.setState({isMounted: true});
+    this.setState({ isMounted: true });
     this.setState({ readError: null, loadingChats: true });
     const chatArea = this.myRef.current;
     try {
-      const user = auth().currentUser;
-
-      console.log("current uid is " + auth().currentUser.uid)
-
       db.ref("chats").on("value", snapshot => {
+
+        // equalizes react and kotlin timestamps
+        const equalizeTimestamp = (timestamp) => {
+          if (JSON.stringify(timestamp).length === 10){
+            return timestamp*1000;
+          } else {
+            return timestamp
+          }  
+        }
 
         // fetches chats from firebase database and creates scrollable chatarea
         let chats = [];
         snapshot.forEach((snap) => {
           chats.push(snap.val());
         });
-        chats.sort(function (a, b) { return a.timestamp - b.timestamp })
+        // sorts chats by timestamp
+        chats.sort(function (a, b) { return equalizeTimestamp(a.timestamp) - equalizeTimestamp(b.timestamp) })
         this.setState({ chats });
         chatArea.scrollBy(0, chatArea.scrollHeight);
-        this.setState({ loadingChats: false }); 
-
-        console.log(chats);
-        console.log(user.displayName);
-
+        this.setState({ loadingChats: false });
       });
 
       this.checkOrCreateUsername();
@@ -73,112 +75,94 @@ export default class Chat extends Component {
     });
   }
 
-  //Checks if user has already been given name in signup or create a reandom username if signup is via google or github
-  async checkOrCreateUsername(){
+  
 
-    // signup with email
+  //Checks if user has already been given name in signup or creates a random username if signup is via google or github
+  async checkOrCreateUsername() {
+
     if (auth().currentUser.displayName === null) {
 
       db.ref("userID_Names").on("value", snapshot => {
-      snapshot.forEach((snap) => {
-        if (snap.val().uid === auth().currentUser.uid){
-          this.setState({isEmailLogin: true});
-          console.log("snap uid is " + snap.val().uid);
-          console.log("username in snap is " + snap.val().name);
-          this.setState({snapName: snap.val().name});
-          console.log("isEmailLogin first is " + this.state.isEmailLogin);
-          auth().currentUser.updateProfile({ displayName: snap.val().name}).then(() => this.setCurrentUsername(snap.val().name));
+        snapshot.forEach((snap) => {
+          // signup with email
+          if (snap.val().uid === auth().currentUser.uid) {
+            this.setState({ isEmailLogin: true });
+            this.setState({ snapName: snap.val().name });
+            auth().currentUser.updateProfile({ displayName: snap.val().name }).then(() => this.setCurrentUsername(snap.val().name));
 
-          //snapkey is key to the usernameUid data
-          this.setState({snapKey: snap.key});
+            //snapkey is key to the usernameUid data
+            this.setState({ snapKey: snap.key });
 
-          console.log("snap key is " + this.state.snapKey);
-
+          }
         }
-       } 
-      );
-      //sign-up with google or github
-    if(!this.state.isEmailLogin) {
+        );
+        //sign-up with google or github
+        if (!this.state.isEmailLogin) {
 
-      console.log("isEmailLogin third is " + this.state.isEmailLogin);
+          let randomUserName = this.createRandomUsername();
 
-      let randomUserName = this.createRandomUsername();
-
-      db.ref("userID_Names").push({
-        uid: auth().currentUser.uid,
-        name: randomUserName
-      }
-      )
-      auth().currentUser.updateProfile({ displayName: randomUserName}).then(() => this.setCurrentUsername(randomUserName));
-    }
-    })
+          db.ref("userID_Names").push({
+            uid: auth().currentUser.uid,
+            name: randomUserName
+          }
+          )
+          auth().currentUser.updateProfile({ displayName: randomUserName }).then(() => this.setCurrentUsername(randomUserName));
+        }
+      })
 
     } else {
       // if displayName is not null, currentUser already has username that is pushed into userID_Names
       let userAlreadyInuserID_Names = false;
       db.ref("userID_Names").once("value", snapshot => {
         snapshot.forEach((snap) => {
-          console.log("snap.uid is " + snap.val().uid);
-          console.log("auth() uid is " + auth().currentUser.uid);
-          console.log("snap.val().uid isequal auth().currentUser.uid " + (snap.val().uid === auth().currentUser.uid));
-          if (snap.val().uid === auth().currentUser.uid){
-            console.log("snap match found")
+          if (snap.val().uid === auth().currentUser.uid) {
             userAlreadyInuserID_Names = true;
             //snapkey is key to the usernameUid data
-            this.setState({snapKey: snap.key})
+            this.setState({ snapKey: snap.key })
           }
-         } 
+        }
         );
-        this.setState({userAlreadyInuserID_NamesFlag: true});
-      }).then( () => {
-        if(!userAlreadyInuserID_Names){
-          console.log("!userAlreadyInuserID_Names " + !userAlreadyInuserID_Names);
-  
+        this.setState({ userAlreadyInuserID_NamesFlag: true });
+      }).then(() => {
+        if (!userAlreadyInuserID_Names) {
           db.ref("userID_Names").push({
             uid: auth().currentUser.uid,
             name: auth().currentUser.displayName
           });
         }
       }
-      ).then( () => {
+      ).then(() => {
         //after possibly pushing userid_uid let's set snapkey if not already set
         db.ref("userID_Names").once("value", snapshot => {
           snapshot.forEach((snap) => {
-            console.log("snap.uid is " + snap.val().uid);
-            console.log("auth() uid is " + auth().currentUser.uid);
-            console.log("snap.val().uid isequal auth().currentUser.uid " + (snap.val().uid === auth().currentUser.uid));
-            if (snap.val().uid === auth().currentUser.uid){
-              console.log("snap match found")
+            if (snap.val().uid === auth().currentUser.uid) {
               userAlreadyInuserID_Names = true;
               //snapkey is key to the usernameUid data
-              this.setState({snapKey: snap.key});
+              this.setState({ snapKey: snap.key });
             }
-           } 
+          }
           );
-          this.setState({userAlreadyInuserID_NamesFlag: true});
+          this.setState({ userAlreadyInuserID_NamesFlag: true });
         })
-    }  
+      }
 
       );
     }
   }
 
   //Creates random username for google and github users
-  createRandomUsername () {
-    let randomName = "user" + ((Math.random())*1000000000).toFixed(0);
-    console.log("created random username");
+  createRandomUsername() {
+    let randomName = "user" + ((Math.random()) * 1000000000).toFixed(0);
     return randomName;
   }
 
-  async setCurrentUsername(name){ 
-    console.log("isEmailLogin after is " + this.state.isEmailLogin)
-    this.setState({currentUserName: name});
-    console.log("auth().currentuser.displayname is " + auth().currentUser.displayName)
+  async setCurrentUsername(name) {
+    this.setState({ currentUserName: name });
   }
 
-  componentWillUnmount(){
+  componentWillUnmount() {
     var unsubscribe = auth().onAuthStateChanged(function () {
-      
+
     });
     unsubscribe();
   }
@@ -191,7 +175,7 @@ export default class Chat extends Component {
 
   handleNameChange(event) {
     this.setState({
-      currentUserName: event.target.value 
+      currentUserName: event.target.value
     });
   }
 
@@ -218,22 +202,23 @@ export default class Chat extends Component {
     const previusName = auth().currentUser.displayName;
 
     //updating auth() profile displayName
-    auth().currentUser.updateProfile({ displayName: this.state.currentUserName}).then(
+    auth().currentUser.updateProfile({ displayName: this.state.currentUserName }).then(
       () => {
-        console.log("response is ");
         try {
           //pushing up a message into the chat that the username has been changed
           db.ref("chats").push({
-            content: "User " + previusName + " with email "  + this.state.user.email + " changed name to " + this.state.currentUserName,
+            content: "User " + previusName + " changed name to " + this.state.currentUserName,
+            // TODO test if adding name attribute changes the function of the program
+            name: "",
             timestamp: Date.now(),
             uid: "9999"
-          }).then(() => { 
+          }).then(() => {
             this.setState({ content: '' });
             this.setState({
               currentUserName: auth().currentUser.displayName
             });
             //updating also username in realtime database
-            db.ref('userID_Names').child(this.state.snapKey).update({name: auth().currentUser.displayName})
+            db.ref('userID_Names').child(this.state.snapKey).update({ name: auth().currentUser.displayName })
           })
         } catch (error) {
           this.setState({ writeError: error.message });
@@ -242,12 +227,25 @@ export default class Chat extends Component {
     );
   }
 
-
-
   formatTime(timestamp) {
-    const d = new Date(timestamp);
-    const time = `${d.getDate()}/${(d.getMonth()+1)}/${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`;
-    return time;
+
+    // adds zero if timestamps hour or minute is of single digit
+    const addZeroBefore = (n) => {
+      return (n < 10 ? '0' : '') + n;
+    }
+    
+    //format time for Kotlin chat message
+    if (JSON.stringify(timestamp).length===10){
+      const d = new Date(timestamp*1000);
+      const time = `${d.getDate()}/${(d.getMonth() + 1)}/${d.getFullYear()} ${addZeroBefore(d.getHours())}:${addZeroBefore(d.getMinutes())}`;
+      return time;
+
+    //format time for React chat message  
+    } else {
+      const d = new Date(timestamp);
+      const time = `${d.getDate()}/${(d.getMonth() + 1)}/${d.getFullYear()} ${addZeroBefore(d.getHours())}:${addZeroBefore(d.getMinutes())}`;
+      return time;
+    }
   }
 
   render() {
@@ -262,13 +260,12 @@ export default class Chat extends Component {
           </div> : ""}
           {/* chat area */}
           {this.state.chats.map(chat => {
-            if (chat.uid === "9999"){
+            if (chat.uid === "9999") {
               return <p key={chat.timestamp} className={"namechange-bubble " + (this.state.user.uid === chat.uid ? "current-user" : "")}>
                 <br />
                 {chat.content}
                 <br />
-                <span className="chat-time float-right">{this.formatTime(chat.timestamp)}</span>
-                </p>
+              </p>
             } else {
               return <p key={chat.timestamp} className={"chat-bubble " + (this.state.user.uid === chat.uid ? "current-user" : "")}>
                 {chat.name} said:
@@ -282,18 +279,18 @@ export default class Chat extends Component {
         </div>
         <div>
           <form onSubmit={this.handleSubmit} className="mx-3">
-            <textarea className="form-control" name="content" onChange={this.handleContentChange} value = {this.state.content} ></textarea>
+            <textarea className="form-control" name="content" onChange={this.handleContentChange} value={this.state.content} ></textarea>
             {this.state.error ? <p className="text-danger">{this.state.error}</p> : null}
             <button type="submit" className="btn btn-submit px-5 mt-4">Send message</button>
           </form>
         </div>
         <form onSubmit={this.processNameChange} className="mx-3">
-          <textarea className="form-control" name="content" onChange={this.handleNameChange} value= {this.state.currentUserName}></textarea>
+          <textarea className="form-control" name="content" onChange={this.handleNameChange} value={this.state.currentUserName}></textarea>
           {this.state.error ? <p className="text-danger">{this.state.error}</p> : null}
           <button type="submit" className="btn btn-submit px-5 mt-4">Change username</button>
         </form>
         <div className="py-5 mx-3">
-          Login in as: <strong className="text-info">{this.state.user.email}</strong>, Current name in chat: <strong className="text-info">{auth().currentUser.displayName===null ? this.state.currentUserName : auth().currentUser.displayName}</strong>
+          Login in as: <strong className="text-info">{this.state.user.email}</strong>, Current name in chat: <strong className="text-info">{auth().currentUser.displayName === null ? this.state.currentUserName : auth().currentUser.displayName}</strong>
         </div>
       </div>
     );

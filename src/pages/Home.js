@@ -60,7 +60,7 @@ export default class Login extends Component {
           <h1>
             Login to
             <Link className="title ml-2" to="/">
-              Chatty
+              ChatAppJH
             </Link>
           </h1>
           <p className="lead">

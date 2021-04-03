@@ -57,9 +57,9 @@ export default class Login extends Component {
           onSubmit={this.handleSubmit}
         >
           <h1>
-            Login to
+            Login to  
             <Link className="title ml-2" to="/">
-              Chatty
+              ChatAppJH
             </Link>
           </h1>
           <p className="lead">

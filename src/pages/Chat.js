@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Header from "../components/Header";
+import Footer from "../components/Footer";
 import { auth } from "../services/firebase";
 import { db } from "../services/firebase";
 import "firebase/auth";
@@ -179,6 +180,7 @@ export default class Chat extends Component {
     });
   }
 
+  // handles pushing of chat message into firebase database
   async handleSubmit(event) {
     event.preventDefault();
     this.setState({ writeError: null });
@@ -253,6 +255,16 @@ export default class Chat extends Component {
       <div>
         <Header />
 
+        <div>
+          <br/>
+          <form onSubmit={this.processNameChange} className="mx-3">
+            <textarea className="form-control-name" name="content" onChange={this.handleNameChange} value={this.state.currentUserName}></textarea>
+            {this.state.error ? <p className="text-danger">{this.state.error}</p> : null}
+            <button type="submit" className="btn btn-submit px-5 mt-4">Change username</button>
+          </form>
+          <br/>
+        </div>
+
         <div className="chat-area" ref={this.myRef}>
           {/* loading indicator */}
           {this.state.loadingChats ? <div className="spinner-border text-success" role="status">
@@ -261,16 +273,18 @@ export default class Chat extends Component {
           {/* chat area */}
           {this.state.chats.map(chat => {
             if (chat.uid === "9999") {
+              // name change message
               return <p key={chat.timestamp} className={"namechange-bubble " + (this.state.user.uid === chat.uid ? "current-user" : "")}>
                 <br />
                 {chat.content}
                 <br />
               </p>
             } else {
+              // chat message
               return <p key={chat.timestamp} className={"chat-bubble " + (this.state.user.uid === chat.uid ? "current-user" : "")}>
-                {chat.name} said:
+                <span className="chat-name">{chat.name} said:</span>
                 <br />
-                {chat.content}
+                <span className="chat-content">{chat.content}</span>  
                 <br />
                 <span className="chat-time float-right">{this.formatTime(chat.timestamp)}</span>
               </p>
@@ -284,14 +298,11 @@ export default class Chat extends Component {
             <button type="submit" className="btn btn-submit px-5 mt-4">Send message</button>
           </form>
         </div>
-        <form onSubmit={this.processNameChange} className="mx-3">
-          <textarea className="form-control" name="content" onChange={this.handleNameChange} value={this.state.currentUserName}></textarea>
-          {this.state.error ? <p className="text-danger">{this.state.error}</p> : null}
-          <button type="submit" className="btn btn-submit px-5 mt-4">Change username</button>
-        </form>
         <div className="py-5 mx-3">
           Login in as: <strong className="text-info">{this.state.user.email}</strong>, Current name in chat: <strong className="text-info">{auth().currentUser.displayName === null ? this.state.currentUserName : auth().currentUser.displayName}</strong>
         </div>
+
+        <Footer/>
       </div>
     );
   }

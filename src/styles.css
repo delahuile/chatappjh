@@ -2,34 +2,40 @@
 
 body {
   font-family: 'Times New Roman', Times, serif;
-  background-color: #ecebea;
+  background-image: url("cork-board.png");
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .chat-area, .home {
-  margin-top: 60px;
+  margin-top: 25px;
 }
 
 .chat-area {
-  background-color: #ece3d9;
+  background-image: url("y-so-serious-white.png");
   padding: 20px;
   height: 400px;
   width: 800px;
   overflow-y: scroll;
+  border-style: dotted;
+  border-top-left-radius: 7px;
+  border-bottom-left-radius: 7px;
+  border-width: 1px;
+  border-color: #757575;
 }
 
 .chat-area .chat-bubble {
-  background-color: #bbecfb;
-  padding: 20px;
+  background-color: #d0e6f3;
+  padding: 10px;
+  padding-left: 20px;
   border-radius: 10px;
   max-width: 300px;
   word-wrap: break-word;
+  line-height: 25px;
 }
 
 .chat-area .namechange-bubble {
-
   font-size: medium;
   font-family: 'Times New Roman', Times, serif;
   color: #7c4d26;
@@ -39,15 +45,28 @@ body {
   align-items: center;
 }
 
-.chat-bubble .chat-time {
-  font-size: 12px;
+.chat-content {
+  font-size: medium;
+  padding-top: 5px;
+  color: #303135;
+  text-align: right;
+}
+
+.chat-time {
+  font-size: small;
   color: #757575;
+  text-align: right;
+}
+
+.chat-name {
+  font-size: small;
+  color: #00268d;
   text-align: right;
 }
 
 .chat-area .chat-bubble.current-user {
   margin-left: auto;
-  background-color: #a5d6b8;
+  background-color: #bed8c8;
 }
 
 .form-control {
@@ -69,6 +88,58 @@ body {
 .btn-submit {
   background-color: #4778d1;
   color: white;
+}
+
+.btn-logout {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-login-googlesignin {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-login-githubsignin {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-login-password {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-signup-googlesignin {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-signup-githubsignin {
+  background-color: #4778d1;
+  color: white;
+}
+
+.btn-signup-password {
+  background-color: #4778d1;
+  color: white;
+}
+
+.header-text {
+  font-size: 20px;
+}
+
+.footer-text{
+  font-size: 10px;
+}
+.mx-3 {
+  padding-top: 5px;
+}
+
+.form-control-name {
+  width: 25%;
+  border-color: #a77b57;
+  border-radius: 5px;
 }
 
 @media screen and (max-width: 767px) {

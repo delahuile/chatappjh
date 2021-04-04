@@ -57,7 +57,7 @@ export default class Login extends Component {
           onSubmit={this.handleSubmit}
         >
           <h1>
-            Login to  
+            Login to <span> </span>
             <Link className="title ml-2" to="/">
               ChatAppJH
             </Link>
@@ -89,13 +89,14 @@ export default class Login extends Component {
             {this.state.error ? (
               <p className="text-danger">{this.state.error}</p>
             ) : null}
-            <button className="btn btn-primary px-5" type="submit">Login</button>
+            <button className="btn-login-password" type="submit">Login</button>
           </div>
           <p>You can also log in with any of these services</p>
-          <button className="btn btn-danger mr-2" type="button" onClick={this.googleSignIn}>
+          <button className="btn-login-googlesignin" type="button" onClick={this.googleSignIn}>
             Sign in with Google
           </button>
-          <button className="btn btn-secondary" type="button" onClick={this.githubSignIn}>
+          <span > </span>
+          <button className="btn-login-githubsignin" type="button" onClick={this.githubSignIn}>
             Sign in with GitHub
           </button>
           <hr />

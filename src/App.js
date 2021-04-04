@@ -5,7 +5,6 @@ import {
   Switch,
   Redirect
 } from "react-router-dom";
-import Home from "./pages/Home.js";
 import Chat from "./pages/Chat.js";
 import Signup from "./pages/Signup.js";
 import Login from "./pages/Login.js";
@@ -101,9 +100,9 @@ class App extends Component {
             <PublicRoute
               path="/"
               authenticated={this.state.authenticated}
-              component={Home}
+              component={Login}
             />
-            <Route exact path="/" component={Home} />
+            <Route exact path="/" component={Login} />
           </Switch>
         </Router>
       );

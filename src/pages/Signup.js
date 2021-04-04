@@ -67,7 +67,7 @@ export default class SignUp extends Component {
       <div className="container">
         <form className="mt-5 py-5 px-5" onSubmit={this.handleSubmit}>
           <h1>
-            Sign Up to 
+            Sign Up to <span> </span>
           <Link className="title ml-2" to="/">ChatAppJH</Link>
           </h1>
           <p className="lead">Fill in the form below to create an account.</p>
@@ -82,13 +82,14 @@ export default class SignUp extends Component {
           </div>
           <div className="form-group">
             {this.state.error ? <p className="text-danger">{this.state.error}</p> : null}
-            <button className="btn btn-primary px-5" type="submit">Sign up</button>
+            <button className="btn-signup-password" type="submit">Sign up</button>
           </div>
           <p>You can also sign up with any of these services</p>
-          <button className="btn btn-danger mr-2" type="button" onClick={this.googleSignIn}>
+          <button className="btn-signup-googlesignin" type="button" onClick={this.googleSignIn}>
             Sign up with Google
           </button>
-          <button className="btn btn-secondary" type="button" onClick={this.githubSignIn}>
+          <span > </span>
+          <button className="btn-signup-githubsignin" type="button" onClick={this.githubSignIn}>
             Sign up with GitHub
           </button>
           <hr></hr>

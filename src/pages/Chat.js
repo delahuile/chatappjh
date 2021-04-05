@@ -7,6 +7,7 @@ import "firebase/auth";
 
 
 export default class Chat extends Component {
+  _isMounted = false;
   constructor(props) {
     super(props);
     this.state = {
@@ -18,10 +19,8 @@ export default class Chat extends Component {
       writeError: null,
       loadingChats: false,
       isMounted: false,
-      snapName: "",
       isEmailLogin: false,
       snapKey: "",
-      userAlreadyInuserID_NamesFlag: false
     };
     this.handleContentChange = this.handleContentChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -33,6 +32,8 @@ export default class Chat extends Component {
   }
 
   async componentDidMount() {
+
+    this._isMounted=true;
 
     this.setState({ isMounted: true });
     this.setState({ readError: null, loadingChats: true });
@@ -78,7 +79,7 @@ export default class Chat extends Component {
 
   
 
-  //Checks if user has already been given name in signup or creates a random username if signup is via google or github
+  // Checks if user has already been given name in signup or creates a random username if signup is via google or github
   async checkOrCreateUsername() {
 
     if (auth().currentUser.displayName === null) {
@@ -88,16 +89,15 @@ export default class Chat extends Component {
           // signup with email
           if (snap.val().uid === auth().currentUser.uid) {
             this.setState({ isEmailLogin: true });
-            this.setState({ snapName: snap.val().name });
             auth().currentUser.updateProfile({ displayName: snap.val().name }).then(() => this.setCurrentUsername(snap.val().name));
 
-            //snapkey is key to the usernameUid data
+            // snapkey is key to the usernameUid data
             this.setState({ snapKey: snap.key });
 
           }
         }
         );
-        //sign-up with google or github
+        // sign-up with google or github
         if (!this.state.isEmailLogin) {
 
           let randomUserName = this.createRandomUsername();
@@ -123,7 +123,6 @@ export default class Chat extends Component {
           }
         }
         );
-        this.setState({ userAlreadyInuserID_NamesFlag: true });
       }).then(() => {
         if (!userAlreadyInuserID_Names) {
           db.ref("userID_Names").push({
@@ -133,25 +132,23 @@ export default class Chat extends Component {
         }
       }
       ).then(() => {
-        //after possibly pushing userid_uid let's set snapkey if not already set
+        // after possibly pushing userid_uid let's set snapkey if not already set
         db.ref("userID_Names").once("value", snapshot => {
           snapshot.forEach((snap) => {
             if (snap.val().uid === auth().currentUser.uid) {
               userAlreadyInuserID_Names = true;
-              //snapkey is key to the usernameUid data
+              // snapkey is key to the usernameUid data
               this.setState({ snapKey: snap.key });
             }
           }
           );
-          this.setState({ userAlreadyInuserID_NamesFlag: true });
         })
       }
-
       );
     }
   }
 
-  //Creates random username for google and github users
+  // Creates random username for google and github users
   createRandomUsername() {
     let randomName = "user" + ((Math.random()) * 1000000000).toFixed(0);
     return randomName;
@@ -162,10 +159,8 @@ export default class Chat extends Component {
   }
 
   componentWillUnmount() {
-    var unsubscribe = auth().onAuthStateChanged(function () {
-
-    });
-    unsubscribe();
+    this._isMounted = false;
+    this.setState({ isMounted: false });
   }
 
   handleContentChange(event) {
@@ -203,14 +198,13 @@ export default class Chat extends Component {
     event.preventDefault();
     const previusName = auth().currentUser.displayName;
 
-    //updating auth() profile displayName
+    // updating auth() profile displayName
     auth().currentUser.updateProfile({ displayName: this.state.currentUserName }).then(
       () => {
         try {
-          //pushing up a message into the chat that the username has been changed
+          // pushing up a message into the chat that the username has been changed
           db.ref("chats").push({
             content: "User " + previusName + " changed name to " + this.state.currentUserName,
-            // TODO test if adding name attribute changes the function of the program
             name: "",
             timestamp: Date.now(),
             uid: "9999"
@@ -219,7 +213,7 @@ export default class Chat extends Component {
             this.setState({
               currentUserName: auth().currentUser.displayName
             });
-            //updating also username in realtime database
+            // updating also username in realtime database using snapKey as an identifier
             db.ref('userID_Names').child(this.state.snapKey).update({ name: auth().currentUser.displayName })
           })
         } catch (error) {
@@ -236,13 +230,13 @@ export default class Chat extends Component {
       return (n < 10 ? '0' : '') + n;
     }
     
-    //format time for Kotlin chat message
+    // format time for Kotlin chat message
     if (JSON.stringify(timestamp).length===10){
       const d = new Date(timestamp*1000);
       const time = `${d.getDate()}/${(d.getMonth() + 1)}/${d.getFullYear()} ${addZeroBefore(d.getHours())}:${addZeroBefore(d.getMinutes())}`;
       return time;
 
-    //format time for React chat message  
+    // format time for React chat message  
     } else {
       const d = new Date(timestamp);
       const time = `${d.getDate()}/${(d.getMonth() + 1)}/${d.getFullYear()} ${addZeroBefore(d.getHours())}:${addZeroBefore(d.getMinutes())}`;

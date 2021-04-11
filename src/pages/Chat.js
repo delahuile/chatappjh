@@ -28,17 +28,22 @@ export default class Chat extends Component {
     this.processNameChange = this.processNameChange.bind(this);
     this.myRef = React.createRef();
     this.setCurrentUsername = this.setCurrentUsername.bind(this);
-    this.checkOrCreateUsername = this.checkOrCreateUsername.bind(this);
+    this.checkOrPushUsername = this.checkOrPushUsername.bind(this);
   }
 
   async componentDidMount() {
 
     this._isMounted=true;
+    
+    await this.checkOrPushUsername().then(await this.setUsername()).then(await this.loadChat());
+  }
 
+  async loadChat() {
     this.setState({ isMounted: true });
     this.setState({ readError: null, loadingChats: true });
     const chatArea = this.myRef.current;
     try {
+      
       db.ref("chats").on("value", snapshot => {
 
         // equalizes react and kotlin timestamps
@@ -60,36 +65,28 @@ export default class Chat extends Component {
         this.setState({ chats });
         chatArea.scrollBy(0, chatArea.scrollHeight);
         this.setState({ loadingChats: false });
-      });
-
-      this.checkOrCreateUsername();
-
+      })  
     } catch (error) {
       this.setState({ readError: error.message, loadingChats: false });
     }
-
-    auth().onAuthStateChanged(user => {
-      if (user) {
-        this.setState({
-          currentUserName: auth().currentUser.displayName
-        });
-      }
-    });
   }
 
   
 
-  // Checks if user has already been given name in signup or creates a random username if signup is via google or github
-  async checkOrCreateUsername() {
+  // Checks if username and uid have already been pushed into usernameuids in firebase database and if not, pushes them into the database
+  async checkOrPushUsername() {
 
     if (auth().currentUser.displayName === null) {
 
+      //updates firebase authorization displayname if user has signed up via email and password
       db.ref("userID_Names").on("value", snapshot => {
         snapshot.forEach((snap) => {
           // signup with email
           if (snap.val().uid === auth().currentUser.uid) {
             this.setState({ isEmailLogin: true });
-            auth().currentUser.updateProfile({ displayName: snap.val().name }).then(() => this.setCurrentUsername(snap.val().name));
+            auth().currentUser.updateProfile({ displayName: snap.val().name }).then(() => {
+              this.setCurrentUsername(snap.val().name);
+            });
 
             // snapkey is key to the usernameUid data
             this.setState({ snapKey: snap.key });
@@ -97,22 +94,10 @@ export default class Chat extends Component {
           }
         }
         );
-        // sign-up with google or github
-        if (!this.state.isEmailLogin) {
-
-          let randomUserName = this.createRandomUsername();
-
-          db.ref("userID_Names").push({
-            uid: auth().currentUser.uid,
-            name: randomUserName
-          }
-          )
-          auth().currentUser.updateProfile({ displayName: randomUserName }).then(() => this.setCurrentUsername(randomUserName));
-        }
       })
 
     } else {
-      // if displayName is not null, currentUser already has username that is pushed into userID_Names
+      // if displayName is not null, currentUser already has username that is pushed into userID_Names if not pushed in UsernameChange in google or github sign up process
       let userAlreadyInuserID_Names = false;
       db.ref("userID_Names").once("value", snapshot => {
         snapshot.forEach((snap) => {
@@ -120,6 +105,7 @@ export default class Chat extends Component {
             userAlreadyInuserID_Names = true;
             //snapkey is key to the usernameUid data
             this.setState({ snapKey: snap.key })
+            this.setState({currentUserName: auth().currentUser.displayName});
           }
         }
         );
@@ -148,10 +134,17 @@ export default class Chat extends Component {
     }
   }
 
-  // Creates random username for google and github users
-  createRandomUsername() {
-    let randomName = "user" + ((Math.random()) * 1000000000).toFixed(0);
-    return randomName;
+  // sets currentUserName to a value that is in userID_Names in firebase database
+  async setUsername(){
+    let username = "";
+    db.ref("userID_Names").once("value", snapshot => {
+      snapshot.forEach((snap) => {
+        if (snap.val().uid === auth().currentUser.uid) {
+          username = snap.val().name;
+        }
+      }
+      );
+    }).then(this.setState({currentUserName: username}));
   }
 
   async setCurrentUsername(name) {

@@ -8,7 +8,9 @@ import {
 import Chat from "./pages/Chat.js";
 import Signup from "./pages/Signup.js";
 import Login from "./pages/Login.js";
+import UsernameChange from "./pages/UsernameChange.js";
 import { auth } from "./services/firebase";
+import { db } from "./services/firebase";
 import './styles.css';
 
 function PrivateRoute({ component: Component, authenticated, ...rest }) {
@@ -28,7 +30,7 @@ function PrivateRoute({ component: Component, authenticated, ...rest }) {
   );
 }
 
-function PublicRoute({ component: Component, authenticated, ...rest }) {
+function PublicRoute({ component: Component, authenticated, userAlreadyInusernameUIDs, appstate, ...rest }) {
   return (
     <Route
       {...rest}
@@ -36,13 +38,12 @@ function PublicRoute({ component: Component, authenticated, ...rest }) {
         authenticated === false ? (
           <Component {...props} />
         ) : (
-            <Redirect to="/chat" />
+          userAlreadyInusernameUIDs ? (<Redirect to="/chat" />) : (<UsernameChange />)
           )
       }
     />
   );
 }
-
 
 class App extends Component {
   constructor() {
@@ -50,32 +51,48 @@ class App extends Component {
     this.state = {
       authenticated: true,
       loading: true,
-      firstrun: true
+      firstrun: true,
+      userAlreadyInusernameUIDs: false
     };
   }
 
   componentDidMount() {
+
+    this.setState({userAlreadyInusernameUIDs: false})
     
     auth().onAuthStateChanged(user => {
       if (user) {
-        console.log("authentication successfull");
-        this.setState({
-          authenticated: true,
-          loading: false
-        });
-
+        this.checkIfUserIsInUsernameUID();
       } else {
         console.log("no user is signed in")
         this.setState({
           authenticated: false,
-          loading: false
+          loading: false,
+          userAlreadyInusernameUIDs: false
         });
       }
     });
   }
 
+  checkIfUserIsInUsernameUID() {
+    db.ref("userID_Names").once("value", snapshot => {
+      snapshot.forEach((snap) => {
+        if (snap.val().uid === auth().currentUser.uid) {
+          this.setState({userAlreadyInusernameUIDs: true})
+        }
+      }
+      );
+    }).then( () => {console.log("authentication successfull");
+    this.setState({
+      authenticated: true,
+      loading: false
+    });
+  }
+  )
+  }
+
   render() {
-    return this.state.loading === true ? (
+    return (this.state.loading === true)  ? (
       <div className="spinner-border text-success" role="status">
         <span className="sr-only">Loading...</span>
       </div>
@@ -90,17 +107,27 @@ class App extends Component {
             <PublicRoute
               path="/signup"
               authenticated={this.state.authenticated}
+              userAlreadyInusernameUIDs = {this.state.userAlreadyInusernameUIDs}
               component={Signup}
             />
             <PublicRoute
               path="/login"
               authenticated={this.state.authenticated}
+              userAlreadyInusernameUIDs = {this.state.userAlreadyInusernameUIDs}
               component={Login}
             />
             <PublicRoute
               path="/"
               authenticated={this.state.authenticated}
+              userAlreadyInusernameUIDs = {this.state.userAlreadyInusernameUIDs}
               component={Login}
+            />
+            <PublicRoute
+              path="/usernamechange"
+              authenticated={this.state.authenticated}
+              userAlreadyInusernameUIDs = {this.state.userAlreadyInusernameUIDs}
+              component={UsernameChange}
+              appstate = {this}
             />
             <Route exact path="/" component={Login} />
           </Switch>

@@ -125,6 +125,12 @@ body {
   color: white;
 }
 
+.btn-enter-username {
+  background-color: #4778d1;
+  color: white;
+  margin-top: 3px;
+}
+
 .header-text {
   font-size: 20px;
 }
